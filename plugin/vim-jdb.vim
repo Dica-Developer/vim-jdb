@@ -1,115 +1,125 @@
+if v:version < 800
+  echohl WarningMsg
+  echomsg 'vim-jdb: Vim version is too old, vim-jdb requires at least 8.0'
+  echohl None
+  finish
+endif
+
+if !has('job')
+  echohl WarningMsg
+  echomsg 'vim-jdb: Vim not compiled with job support'
+  echohl None
+  finish
+endif
+
+if !has('channel')
+  echohl WarningMsg
+  echomsg 'vim-jdb: Vim not compiled with channel support'
+  echohl None
+  finish
+endif
 
 command! JDBAttach call Attach()
 command! JDBDetach call Detach()
 command! JDBBreakpointOnLine call BreakpointOnLine(expand('%:~:.'), line('.'))
 command! JDBClearBreakpointOnLine call ClearBreakpointOnLine(expand('%:~:.'), line('.'))
+command! JDBContinue call Continue()
+command! JDBStepOver call s:stepOver()
+command! JDBStepIn call s:stepIn()
+command! JDBStepUp call s:stepUp()
+command! JDBStepI call s:stepI()
+command! JDBCommand call s:command(<args>)
+
+let s:channel = ''
 
 function! s:getClassNameFromFile(filename)
-  let l:className=fnamemodify(a:filename,':t:r')
+  let l:className = fnamemodify(a:filename,':t:r')
   for l:line in readfile(a:filename)
-    let l:matches=matchlist(l:line,'\vpackage\s+(%(\w|\.)+)\s*;')
-    if 1<len(l:matches)
+    let l:matches = matchlist(l:line,'\vpackage\s+(%(\w|\.)+)\s*;')
+    if 1 < len(l:matches)
       return l:matches[1].'.'.l:className
     endif
   endfor
   return l:className
 endfunction
 
+function! JdbOutHandler(channel, msg)
+  let l:breakpoint = ''
+  let l:match = matchstr(a:msg, '^Breakpoint hit:')
+  if l:match == 'Breakpoint hit:'
+    let l:breakpoint = split(a:msg, ',')
+    echom l:breakpoint[1]
+    echom l:breakpoint[2]
+  endif
+  let l:match = matchstr(a:msg, '^Step completed:')
+  if l:match == 'Step completed:'
+    let l:breakpoint = split(a:msg, ',')
+    echom l:breakpoint[1]
+    echom l:breakpoint[2]
+  endif
+  let l:match = matchstr(a:msg, '^Set breakpoint ')
+  if l:match == 'Set breakpoint '
+    let l:breakpoint = split(a:msg)
+    echom split(l:breakpoint[2], ':')
+  endif
+endfunction
+
+function! JdbErrHandler(channel, msg)
+endfunction
+
 function! Attach()
-  ruby $jdb.attach()
+  " Vim::message('There is already a JDB session running. Detach first before you can start a new one.')
+  let win = bufwinnr('_JDB_SHELL_')
+  if win == -1
+      exe 'silent new _JDB_SHELL_'
+      let win = bufwinnr('_JDB_SHELL_')
+  endif
+  let job = job_start("/home/ms/progs/jdk1.8/bin/jdb -attach localhost:5005", {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
+  let s:channel = job_getchannel(job)
+  call ch_sendraw(s:channel, "run\n")
+  call ch_sendraw(s:channel, "monitor where\n")
 endfunction
 
 function! Detach()
-  ruby $jdb.detach()
+  call ch_sendraw(s:channel, "exit\n")
+  s:channel = ''
 endfunction
 
 function! BreakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
   let fileName = s:getClassNameFromFile(a:fileName)
-  ruby $jdb.addBreakpointOnLine(VIM::evaluate('fileName'), VIM::evaluate('a:lineNumber'))
+  "TODO store command temporary if not already connected
+  call ch_sendraw(s:channel, "stop at " . fileName . ":" . a:lineNumber . "\n")
 endfunction
 
 function! ClearBreakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
   let fileName = s:getClassNameFromFile(a:fileName)
-  ruby $jdb.clearBreakpointOnLine(VIM::evaluate('fileName'), VIM::evaluate('a:lineNumber'))
+  "TODO store command temporary if not already connected
+  call ch_sendraw(s:channel, "clear " . fileName . ":" . a:lineNumber . "\n")
 endfunction
 
-ruby << EOF
+function! Continue()
+  call ch_sendraw(s:channel, "resume\n")
+endfunction
 
-require 'open3'
+function! s:stepOver()
+  call ch_sendraw(s:channel, "next\n")
+endfunction
 
-module JDB
+function! s:stepUp()
+  call ch_sendraw(s:channel, "step up\n")
+endfunction
 
-  class JDB
-    attr_reader :main
-    attr_reader :stdin
-    attr_reader :stdout
-    attr_reader :stderr
-    attr_reader :breakpoints
+function! s:stepIn()
+  call ch_sendraw(s:channel, "step in\n")
+endfunction
 
-    def initialize
-      @breakpoints = Array.new
-    end
+function! s:stepI()
+  call ch_sendraw(s:channel, "stepi\n")
+endfunction
 
-    public
-    def attach
-      if nil == @main
-        @main = Thread.new {
-          @stdin, @stdout, @stderr = Open3.popen3('/home/ms/progs/jdk1.8/bin/jdb -attach localhost:5005')
-
-          Thread.new {
-            while true
-              Vim::message(@stdout.gets)
-            end
-          }
-
-          Thread.new {
-            while true
-              Vim::message(@stderr.gets)
-            end
-          }
-
-          @stdin.puts('monitor where')
-          @stdin.puts('run')
-          Vim::message('Attached to JVM!')
-        }
-        Thread.new {
-          @main.join
-        }
-      else
-        Vim::message('There is already a JDB session running. Detach first before you can start a new one.')
-      end
-    end
-
-    def detach
-      @stdin.puts('exit')
-      @stdin.puts('exit')
-      @main.kill if nil != @main
-      @main = nil
-    end
-
-    def addBreakpointOnLine(fileName, lineNumber)
-      Vim::message("stop at #{fileName}:#{lineNumber}")
-      if nil != @main
-        @stdin.puts("stop at #{fileName}:#{lineNumber}")
-      else
-        @breakpoints.push("stop at #{fileName}:#{lineNumber}")
-      end
-    end
-
-    def clearBreakpointOnLine(fileName, lineNumber)
-      Vim::message("clear at #{fileName}:#{lineNumber}")
-      if nil != @main
-        @stdin.puts("clear at #{fileName}:#{lineNumber}")
-      else
-        @breakpoints.push("clear at #{fileName}:#{lineNumber}")
-      end
-    end
-  end
-end
-
-$jdb = JDB::JDB.new
-
-EOF
+function! s:command(command)
+  call ch_sendraw(s:channel, a:command . "\n")
+endfunction
 
