@@ -19,6 +19,13 @@ if !has('channel')
   finish
 endif
 
+if !has('signs')
+  echohl WarningMsg
+  echomsg 'vim-jdb: Vim not compiled with sign support'
+  echohl None
+  finish
+endif
+
 command! JDBAttach call Attach()
 command! JDBDetach call Detach()
 command! JDBBreakpointOnLine call BreakpointOnLine(expand('%:~:.'), line('.'))
@@ -29,6 +36,10 @@ command! JDBStepIn call s:stepIn()
 command! JDBStepUp call s:stepUp()
 command! JDBStepI call s:stepI()
 command! JDBCommand call s:command(<args>)
+
+" ⭙  ⬤  ⏺  ⚑  ⛔ 
+sign define breakpoint text=⛔
+sign define currentline text=-> texthl=Search
 
 let s:channel = ''
 
@@ -44,6 +55,8 @@ function! s:getClassNameFromFile(filename)
 endfunction
 
 function! JdbOutHandler(channel, msg)
+  "TODO make debug logging out of it
+  "echom a:msg
   let l:breakpoint = ''
   let l:match = matchstr(a:msg, '^Breakpoint hit:')
   if l:match == 'Breakpoint hit:'
@@ -57,10 +70,13 @@ function! JdbOutHandler(channel, msg)
     echom l:breakpoint[1]
     echom l:breakpoint[2]
   endif
-  let l:match = matchstr(a:msg, '^Set breakpoint ')
-  if l:match == 'Set breakpoint '
+  let l:match = matchstr(a:msg, '^.*Set breakpoint ')
+  if l:match == '> Set breakpoint '
     let l:breakpoint = split(a:msg)
-    echom split(l:breakpoint[2], ':')
+    let l:breakpoint = split(l:breakpoint[3], ':')
+    let l:filename = join(split(l:breakpoint[0], '\.'), '/')
+    exe 'e **/'. l:filename .'.java'
+    exe 'sign place 1 line='. str2nr(l:breakpoint[1]) .' name=breakpoint file='.  expand("%:p")
   endif
 endfunction
 
