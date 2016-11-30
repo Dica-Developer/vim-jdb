@@ -58,24 +58,40 @@ function! JdbOutHandler(channel, msg)
   "TODO make debug logging out of it
   "echom a:msg
   let l:breakpoint = ''
-  let l:match = matchstr(a:msg, '^Breakpoint hit:')
-  if l:match == 'Breakpoint hit:'
+  if -1 < stridx(a:msg, 'Breakpoint hit:')
+    echom "breakpoint hit"
     let l:breakpoint = split(a:msg, ',')
-    echom l:breakpoint[1]
-    echom l:breakpoint[2]
+    let l:filename = l:breakpoint[1]
+    let l:filename = substitute(l:filename, '\.\a*()$', '', '')
+    let l:filename = substitute(l:filename, ' ', '', 'g')
+    let l:filename = join(split(l:filename, '\.'), '/')
+    let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
+    " TODO only open when current buffer is not the file to open
+    exe 'e +%foldopen! **/'. l:filename .'.java'
+    exe l:linenumber
+    exe 'sign unplace 2'
+    exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
   endif
-  let l:match = matchstr(a:msg, '^Step completed:')
-  if l:match == 'Step completed:'
+  if -1 < stridx(a:msg, 'Step completed:')
+    " TODO handle ClassName$3.get()
+    echom "Step completed"
     let l:breakpoint = split(a:msg, ',')
-    echom l:breakpoint[1]
-    echom l:breakpoint[2]
+    let l:filename = l:breakpoint[1]
+    let l:filename = substitute(l:filename, '\.\a*()$', '', '')
+    let l:filename = substitute(l:filename, ' ', '', 'g')
+    let l:filename = join(split(l:filename, '\.'), '/')
+    let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
+    " TODO only open when current buffer is not the file to open
+    exe 'e +%foldopen! **/'. l:filename .'.java'
+    exe l:linenumber
+    exe 'sign unplace 2'
+    exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
   endif
-  let l:match = matchstr(a:msg, '^.*Set breakpoint ')
-  if l:match == '> Set breakpoint '
-    let l:breakpoint = split(a:msg)
-    let l:breakpoint = split(l:breakpoint[3], ':')
+  if -1 < stridx(a:msg, 'Set breakpoint ')
+    echom "Set breakpoint"
+    let l:breakpoint = substitute(a:msg, '.*Set breakpoint ', '', '')
+    let l:breakpoint = split(l:breakpoint, ':')
     let l:filename = join(split(l:breakpoint[0], '\.'), '/')
-    exe 'e **/'. l:filename .'.java'
     exe 'sign place 1 line='. str2nr(l:breakpoint[1]) .' name=breakpoint file='.  expand("%:p")
   endif
 endfunction
