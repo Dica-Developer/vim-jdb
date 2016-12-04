@@ -43,6 +43,15 @@ sign define currentline text=-> texthl=Search
 
 let s:channel = ''
 
+function! s:hash(name, linenumber)
+  let l:result = 1
+  for c in split(a:name, '\zs')
+    let l:result = (l:result * 2) + char2nr(c)
+  endfor
+  let l:result = (l:result * 2) + a:linenumber
+  return l:result
+endfunction
+
 function! s:getClassNameFromFile(filename)
   let l:className = fnamemodify(a:filename,':t:r')
   for l:line in readfile(a:filename)
@@ -87,12 +96,24 @@ function! JdbOutHandler(channel, msg)
     exe 'sign unplace 2'
     exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
   endif
-  if -1 < stridx(a:msg, 'Set breakpoint ')
+  if -1 < stridx(a:msg, 'Set breakpoint ') || -1 < stridx(a:msg, 'Set deferred breakpoint ')
     echom "Set breakpoint"
     let l:breakpoint = substitute(a:msg, '.*Set breakpoint ', '', '')
+    let l:breakpoint = substitute(a:msg, '.*Set deferred breakpoint ', '', '')
     let l:breakpoint = split(l:breakpoint, ':')
     let l:filename = join(split(l:breakpoint[0], '\.'), '/')
-    exe 'sign place 1 line='. str2nr(l:breakpoint[1]) .' name=breakpoint file='.  expand("%:p")
+    echom s:hash(expand("%:t"), str2nr(l:breakpoint[1]))
+    exe 'sign place '. s:hash(expand("%:t"), str2nr(l:breakpoint[1])) .' line='. str2nr(l:breakpoint[1]) .' name=breakpoint file='. expand("%:p")
+  endif
+  if -1 < stridx(a:msg, 'Removed: breakpoint ')
+    echom "Clear breakpoint"
+    let l:breakpoint = substitute(a:msg, '.*Removed: breakpoint ', '', '')
+    let l:breakpoint = split(l:breakpoint, ':')
+    exe 'sign unplace '. s:hash(expand("%:t"), str2nr(l:breakpoint[1]))
+  endif
+  if -1 < stridx(a:msg, 'All threads resumed.')
+    echom "Continue"
+    exe 'sign unplace 2'
   endif
 endfunction
 
@@ -114,7 +135,7 @@ endfunction
 
 function! Detach()
   call ch_sendraw(s:channel, "exit\n")
-  s:channel = ''
+  let s:channel = ''
 endfunction
 
 function! BreakpointOnLine(fileName, lineNumber)
