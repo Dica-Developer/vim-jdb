@@ -122,20 +122,23 @@ function! JdbErrHandler(channel, msg)
 endfunction
 
 function! s:attach(...)
-  " Vim::message('There is already a JDB session running. Detach first before you can start a new one.')
-  let l:hostAndPort = 'localhost:5005'
-  if 0 < a:0
-    let l:hostAndPort = a:1
+  if s:channel == ''
+    let l:hostAndPort = 'localhost:5005'
+    if 0 < a:0
+      let l:hostAndPort = a:1
+    endif
+    let win = bufwinnr('_JDB_SHELL_')
+    if win == -1
+        exe 'silent new _JDB_SHELL_'
+        let win = bufwinnr('_JDB_SHELL_')
+    endif
+    let job = job_start('/home/ms/progs/jdk1.8/bin/jdb -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
+    let s:channel = job_getchannel(job)
+    call ch_sendraw(s:channel, "run\n")
+    call ch_sendraw(s:channel, "monitor where\n")
+  else
+    echom 'There is already a JDB session running. Detach first before you start a new one.'
   endif
-  let win = bufwinnr('_JDB_SHELL_')
-  if win == -1
-      exe 'silent new _JDB_SHELL_'
-      let win = bufwinnr('_JDB_SHELL_')
-  endif
-  let job = job_start('/home/ms/progs/jdk1.8/bin/jdb -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
-  let s:channel = job_getchannel(job)
-  call ch_sendraw(s:channel, "run\n")
-  call ch_sendraw(s:channel, "monitor where\n")
 endfunction
 
 function! Detach()
