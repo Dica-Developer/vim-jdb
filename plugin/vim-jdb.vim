@@ -26,16 +26,16 @@ if !has('signs')
   finish
 endif
 
-command! -nargs=? JDBAttach call s:attach(<args>)
-command! JDBDetach call Detach()
-command! JDBBreakpointOnLine call BreakpointOnLine(expand('%:~:.'), line('.'))
-command! JDBClearBreakpointOnLine call ClearBreakpointOnLine(expand('%:~:.'), line('.'))
-command! JDBContinue call Continue()
+command! -nargs=? JDBAttach call s:attach(<f-args>)
+command! JDBDetach call s:detach()
+command! JDBBreakpointOnLine call s:breakpointOnLine(expand('%:~:.'), line('.'))
+command! JDBClearBreakpointOnLine call s:clearBreakpointOnLine(expand('%:~:.'), line('.'))
+command! JDBContinue call s:continue()
 command! JDBStepOver call s:stepOver()
 command! JDBStepIn call s:stepIn()
 command! JDBStepUp call s:stepUp()
 command! JDBStepI call s:stepI()
-command! -nargs=1 JDBCommand call s:command(<args>)
+command! -nargs=1 JDBCommand call s:command(<f-args>)
 
 " ⭙  ⬤  ⏺  ⚑  ⛔ 
 sign define breakpoint text=⛔
@@ -102,7 +102,6 @@ function! JdbOutHandler(channel, msg)
     let l:breakpoint = substitute(a:msg, '.*Set deferred breakpoint ', '', '')
     let l:breakpoint = split(l:breakpoint, ':')
     let l:filename = join(split(l:breakpoint[0], '\.'), '/')
-    echom s:hash(expand("%:t"), str2nr(l:breakpoint[1]))
     exe 'sign place '. s:hash(expand("%:t"), str2nr(l:breakpoint[1])) .' line='. str2nr(l:breakpoint[1]) .' name=breakpoint file='. expand("%:p")
   endif
   if -1 < stridx(a:msg, 'Removed: breakpoint ')
@@ -141,26 +140,26 @@ function! s:attach(...)
   endif
 endfunction
 
-function! Detach()
+function! s:detach()
   call ch_sendraw(s:channel, "exit\n")
   let s:channel = ''
 endfunction
 
-function! BreakpointOnLine(fileName, lineNumber)
+function! s:breakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
   let fileName = s:getClassNameFromFile(a:fileName)
   "TODO store command temporary if not already connected
   call ch_sendraw(s:channel, "stop at " . fileName . ":" . a:lineNumber . "\n")
 endfunction
 
-function! ClearBreakpointOnLine(fileName, lineNumber)
+function! s:clearBreakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
   let fileName = s:getClassNameFromFile(a:fileName)
   "TODO store command temporary if not already connected
   call ch_sendraw(s:channel, "clear " . fileName . ":" . a:lineNumber . "\n")
 endfunction
 
-function! Continue()
+function! s:continue()
   call ch_sendraw(s:channel, "resume\n")
 endfunction
 
