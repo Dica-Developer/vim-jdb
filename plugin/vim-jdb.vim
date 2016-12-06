@@ -122,16 +122,14 @@ endfunction
 
 function! s:attach(...)
   if s:channel == ''
-    let l:hostAndPort = 'localhost:5005'
-    if 0 < a:0
-      let l:hostAndPort = a:1
-    endif
+    let l:hostAndPort = get(a:, 1,'localhost:5005')
+    let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
     let win = bufwinnr('_JDB_SHELL_')
     if win == -1
         exe 'silent new _JDB_SHELL_'
         let win = bufwinnr('_JDB_SHELL_')
     endif
-    let job = job_start('/home/ms/progs/jdk1.8/bin/jdb -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
+    let job = job_start(l:jdbCommand .' -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
     let s:channel = job_getchannel(job)
     call ch_sendraw(s:channel, "run\n")
     call ch_sendraw(s:channel, "monitor where\n")
