@@ -1,7 +1,7 @@
 # vim-jdb
 
-Its a debugger frontend for the JAVA.JDB debugger. It allows remote debugging via attach parameter.
-It marks by vim-jdb setted breakpoints and shows the current file and line the debugger stays.
+Its a JAVA debugger frontend plugin for VIM. It allows to debug a JAVA program via the JDB debugger. It allows remote debugging via attach parameter.
+It marks by vim-jdb setted breakpoints and shows the current file and line the debugger currently stays.
 
 It requires VIM >= 8.0 and that VIm is compiled with `channel`, `signs` and `job` support.
 
@@ -21,4 +21,4 @@ JDBCommand - send any JDB command to the application under debug
 
 ## Global variables
 
-To specify the JDB command to use you can overwrite the following variable `g:vimjdb_jdb_command`. The defauklt is `jdb`.
+To specify the JDB command to use you can overwrite the following variable `g:vimjdb_jdb_command`. The default is `jdb`.
