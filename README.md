@@ -9,7 +9,7 @@ It requires VIM >= 8.0 and that VIm is compiled with `channel`, `signs` and `job
 ## Commands
 |Command|Description|
 | ------------- |:-------------:|
-|JDBAttach|attach to a running JVM with a debug listener on localhost:5005, can be overwritten by givwn host:port as an argument|
+|JDBAttach|attach to a running JVM with a debug listener on localhost:5005, can be overwritten by given host:port as an argument|
 |JDBDetach|detach the debugger UI from the application that is currently debugged|
 |JDBBreakpointOnLine|set a breakpoint on the current line|
 |JDBClearBreakpointOnLine|clear the breakpoint on the current line|
