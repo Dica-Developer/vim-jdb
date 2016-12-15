@@ -173,6 +173,11 @@ function! s:detach()
     call ch_sendraw(s:channel, "exit\n")
     let s:channel = ''
     let s:job = ''
+    let win = bufwinnr('_JDB_SHELL_')
+    if win != -1
+      exe win . 'wincmd w'
+      exe 'close'
+    endif
   endif
 endfunction
 
