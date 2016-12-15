@@ -132,8 +132,32 @@ function! s:attach(...)
     let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
     let win = bufwinnr('_JDB_SHELL_')
     if win == -1
-        exe 'silent new _JDB_SHELL_'
+        exe 'silent keepalt leftabove split _JDB_SHELL_'
+        exe 'silent resize 15'
         let win = bufwinnr('_JDB_SHELL_')
+        setlocal noreadonly
+        setlocal filetype=tagbar
+        setlocal buftype=nofile
+        setlocal bufhidden=hide
+        setlocal noswapfile
+        setlocal nobuflisted
+        setlocal nomodifiable
+        setlocal textwidth=0
+        setlocal nolist
+        setlocal nowrap
+        setlocal nospell
+        setlocal winfixwidth
+        setlocal nonumber
+        if exists('+relativenumber')
+          setlocal norelativenumber
+        endif
+        setlocal nofoldenable
+        setlocal foldcolumn=0
+        " Reset fold settings in case a plugin set them globally to something
+        " expensive. Apparently 'foldexpr' gets executed even if 'foldenable' is
+        " off, and then for every appended line (like with :put).
+        setlocal foldmethod&
+        setlocal foldexpr&
     endif
     let s:job = job_start(l:jdbCommand .' -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
     let s:channel = job_getchannel(s:job)
