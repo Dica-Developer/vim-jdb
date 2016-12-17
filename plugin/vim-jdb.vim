@@ -7,21 +7,21 @@ endif
 
 if !has('job')
   echohl WarningMsg
-  echomsg 'vim-jdb: Vim not compiled with job support'
+  echomsg 'vim-jdb: Vim not compiled with job support, vim-jdb requires job'
   echohl None
   finish
 endif
 
 if !has('channel')
   echohl WarningMsg
-  echomsg 'vim-jdb: Vim not compiled with channel support'
+  echomsg 'vim-jdb: Vim not compiled with channel support, vim-jdb requires channel'
   echohl None
   finish
 endif
 
 if !has('signs')
   echohl WarningMsg
-  echomsg 'vim-jdb: Vim not compiled with sign support'
+  echomsg 'vim-jdb: Vim not compiled with sign support, vim-jdb requires signs'
   echohl None
   finish
 endif
