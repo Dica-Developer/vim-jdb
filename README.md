@@ -17,6 +17,7 @@ It requires VIM >= 8.0 and VIM compiled with `channel`, `signs` and `job` suppor
 7. if your programm stops at the breakpoint this is marked with a `->`
 8. use the command `:JDBStepOver` to execute to the next line
 9. with `:JDBCommand` you can send any JDB command to the JDB JAVA process, e.g. you want to see all locals do `:JDBCommands locals`
+10. with `:JDBContinue` you can resume the execution until the next breakpoint is hits
 
 ## Commands
 |Command|Description|
