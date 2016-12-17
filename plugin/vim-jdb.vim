@@ -127,14 +127,11 @@ function! JdbErrHandler(channel, msg)
   echoe 'Error on JDB communication: '. a:msg
 endfunction
 
-function! s:attach(...)
-  if s:job == '' || job_status(s:job) != 'run'
-    let l:hostAndPort = get(a:, 1,'localhost:5005')
-    let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
-    let win = bufwinnr('_JDB_SHELL_')
+function! s:openWindow(name, mode, size)
+    let win = bufwinnr(a:name)
     if win == -1
-        exe 'silent keepalt leftabove split _JDB_SHELL_'
-        exe 'silent resize 15'
+        exe 'silent keepalt '. a:mode .' split _JDB_SHELL_'
+        exe 'silent resize '. a:size
         let win = bufwinnr('_JDB_SHELL_')
         setlocal noreadonly
         setlocal filetype=tagbar
@@ -160,6 +157,13 @@ function! s:attach(...)
         setlocal foldmethod&
         setlocal foldexpr&
     endif
+endfunction
+
+function! s:attach(...)
+  if s:job == '' || job_status(s:job) != 'run'
+    let l:hostAndPort = get(a:, 1, 'localhost:5005')
+    let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
+    call s:openWindow('_JDB_SHELL_', 'leftabove', 15)
     let s:job = job_start(l:jdbCommand .' -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
     let s:channel = job_getchannel(s:job)
     call ch_sendraw(s:channel, "run\n")
