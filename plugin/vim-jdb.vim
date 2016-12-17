@@ -130,9 +130,9 @@ endfunction
 function! s:openWindow(name, mode, size)
     let win = bufwinnr(a:name)
     if win == -1
-        exe 'silent keepalt '. a:mode .' split _JDB_SHELL_'
-        exe 'silent resize '. a:size
-        let win = bufwinnr('_JDB_SHELL_')
+        exe 'silent keepalt '. a:mode .' split '. a:name
+        exe 'silent '. a:mode .' resize '. a:size
+        let win = bufwinnr(a:name)
         setlocal noreadonly
         setlocal filetype=tagbar
         setlocal buftype=nofile
@@ -163,7 +163,7 @@ function! s:attach(...)
   if s:job == '' || job_status(s:job) != 'run'
     let l:hostAndPort = get(a:, 1, 'localhost:5005')
     let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
-    call s:openWindow('_JDB_SHELL_', 'leftabove', 15)
+    call s:openWindow('_JDB_SHELL_', '', 15)
     let s:job = job_start(l:jdbCommand .' -attach '. l:hostAndPort, {"out_modifiable": 0, "out_io": "buffer", "out_name": "_JDB_SHELL_", "out_cb": "JdbOutHandler", "err_modifiable": 0, "err_io": "buffer", "err_name": "_JDB_SHELL_", "err_cb": "JdbErrHandler"})
     let s:channel = job_getchannel(s:job)
     call ch_sendraw(s:channel, "run\n")
@@ -225,6 +225,12 @@ function! s:command(command)
 endfunction
 
 function! s:toggleWatchWindow()
-  
+  let win = bufwinnr('_JDB_WATCH_')
+  if win != -1
+    exe win . 'wincmd w'
+    exe 'close'
+  else
+    call s:openWindow('_JDB_WATCH_', 'vertical', 15)
+  endif
 endfunction
 
