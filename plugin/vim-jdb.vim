@@ -40,9 +40,9 @@ command! -nargs=1 JDBCommand call s:command(<f-args>)
 
 if has('multi_byte') && has('unix') && &encoding == 'utf-8' && (empty(&termencoding) || &termencoding == 'utf-8')
   " ⭙  ⬤  ⏺  ⚑  ⛔
-  sign define breakpoint text=⛔
+  sign define breakpoint text=⛔ texthl=Debug
 else
-  sign define breakpoint text=x
+  sign define breakpoint text=x texthl=Debug
 endif
 
 sign define currentline text=-> texthl=Search
