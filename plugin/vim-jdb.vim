@@ -132,7 +132,6 @@ function! s:openWindow(name, mode, size)
     if win == -1
         exe 'silent keepalt '. a:mode .' split '. a:name
         exe 'silent '. a:mode .' resize '. a:size
-        let win = bufwinnr(a:name)
         setlocal noreadonly
         setlocal filetype=tagbar
         setlocal buftype=nofile
