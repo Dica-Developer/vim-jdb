@@ -1,5 +1,7 @@
 # vim-jdb
 
+This is a fork of Dica-Developer/vim-jdb so checkout the main branch as well.
+
 Its a JAVA debugger frontend plugin for VIM. It allows to debug a JAVA program via the JDB debugger. It allows remote debugging via attach parameter.
 It marks by vim-jdb setted breakpoints and shows the current file and line the debugger stays in.
 
@@ -18,6 +20,10 @@ It requires VIM >= 8.0 and VIM compiled with `channel`, `signs` and `job` suppor
 8. use the command `:JDBStepOver` to execute to the next line
 9. with `:JDBCommand` you can send any JDB command to the JDB JAVA process, e.g. you want to see all locals do `:JDBCommands locals`
 10. with `:JDBContinue` you can resume the execution until the next breakpoint is hits
+11. with `:JDBDebugProcess` will (currently) pick the function name you are currently in if it is annontated with "@Test". It will then construct the the path to the class from the class name and package name in the file.
+    finally it will start jdb like this e.g.: jdb -Dtest.single=functionmane org.junit.runner.JUnitCore yourpackage.classname
+    for this to work properly you need to set the env var CLASSPATH with your projects dependencies. For me I use gradle for dev so have a task named "classpath" and can do this from with in gradle before starting. 
+    :let $CLASSPATH=system("gradle -q classpath") . ":build/classes/main:build/classes/test"
 
 ## Commands
 |Command|Description|
@@ -32,8 +38,11 @@ It requires VIM >= 8.0 and VIM compiled with `channel`, `signs` and `job` suppor
 |JDBStepUp|steps a level up in the stack|
 |JDBStepI|steps to the next instruction|
 |JDBCommand|send any JDB command to the application under debug|
+|JDBDebugProcess|While in a JUnit test this will start a debug process using junit -Dtest.single|
 
 ## Global variables
 
 To specify the JDB command to use you can overwrite the following variable `g:vimjdb_jdb_command`. The default is `jdb`.
+For starting debug process for Unit tests you can override the following variables.
+g:vimjdb_unit_test_class by default it is set tp 'org.junit.runnint.JUnitCore'
 
