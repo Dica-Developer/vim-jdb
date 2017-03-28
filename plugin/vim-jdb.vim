@@ -174,6 +174,7 @@ endfunction
 
 function! s:detach()
   if s:job != '' && job_status(s:job) == 'run'
+    exe 'sign unplace 2'
     call ch_sendraw(s:channel, "exit\n")
     let s:channel = ''
     let s:job = ''
