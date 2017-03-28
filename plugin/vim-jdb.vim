@@ -121,6 +121,18 @@ function! JdbOutHandler(channel, msg)
     echom "Continue"
     exe 'sign unplace 2'
   endif
+  if -1 < stridx(a:msg, 'The application exited')
+    echom "Debugging stopped"
+    exe 'sign unplace 2'
+    let s:channel = ''
+    let s:job = ''
+    let s:running = 0
+    let win = bufwinnr('_JDB_SHELL_')
+    if win != -1
+      exe win . 'wincmd w'
+      exe 'close'
+    endif
+  endif
 endfunction
 
 function! JdbErrHandler(channel, msg)
