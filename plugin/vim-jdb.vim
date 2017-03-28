@@ -82,8 +82,9 @@ function! JdbOutHandler(channel, msg)
     let l:filename = substitute(l:filename, ' ', '', 'g')
     let l:filename = join(split(l:filename, '\.'), '/')
     let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
-    " TODO only open when current buffer is not the file to open
-    exe 'e +%foldopen! **/'. l:filename .'.java'
+    if l:filename != expand('%')
+      exe 'e +%foldopen! **/'. l:filename .'.java'
+    endif
     exe l:linenumber
     exe 'sign unplace 2'
     exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
@@ -97,8 +98,9 @@ function! JdbOutHandler(channel, msg)
     let l:filename = substitute(l:filename, ' ', '', 'g')
     let l:filename = join(split(l:filename, '\.'), '/')
     let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
-    " TODO only open when current buffer is not the file to open
-    exe 'e +%foldopen! **/'. l:filename .'.java'
+    if l:filename != expand('%')
+      exe 'e +%foldopen! **/'. l:filename .'.java'
+    endif
     exe l:linenumber
     exe 'sign unplace 2'
     exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
