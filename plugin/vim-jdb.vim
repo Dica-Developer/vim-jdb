@@ -41,8 +41,10 @@ command! -nargs=1 JDBCommand call s:command(<f-args>)
 if has('multi_byte') && has('unix') && &encoding == 'utf-8' && (empty(&termencoding) || &termencoding == 'utf-8')
   " ⭙  ⬤  ⏺  ⚑  ⛔
   sign define breakpoint text=⛔ texthl=Debug
+  sign define breakpointnotconnected text=⬤ texthl=Debug
 else
   sign define breakpoint text=x texthl=Debug
+  sign define breakpointnotconnected text=o texthl=Debug
 endif
 
 sign define currentline text=-> texthl=Search
@@ -186,6 +188,8 @@ function! s:attach(...)
     call ch_sendraw(s:channel, "run\n")
     call ch_sendraw(s:channel, "monitor where\n")
 
+    call s:applyBreakPoints(s:channel, 'breakpoint')
+
     " jump now back to original window and let it look like we never left
     call win_gotoid(l:orgwinid)
     call winrestview(l:winview)
@@ -210,16 +214,28 @@ endfunction
 
 function! s:breakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
-  let fileName = s:getClassNameFromFile(a:fileName)
-  "TODO store command temporary if not already connected
-  call ch_sendraw(s:channel, "stop at " . fileName . ":" . a:lineNumber . "\n")
+
+  if s:job != '' && job_status(s:job) == 'run'
+    let fileName = s:getClassNameFromFile(a:fileName)
+    call ch_sendraw(s:channel, "stop at " . fileName . ":" . a:lineNumber . "\n")
+  else
+    let l:lineNumber = line('.')
+    let l:currentBuffer = bufnr('%')
+    exe 'sign place '. s:hash(expand("%:t"), str2nr(l:lineNumber)) .' line='. str2nr(l:lineNumber) .' name=breakpointnotconnected buffer='. l:currentBuffer
+  endif
 endfunction
 
 function! s:clearBreakpointOnLine(fileName, lineNumber)
   "TODO check if we are on a java file and fail if not
-  let fileName = s:getClassNameFromFile(a:fileName)
-  "TODO store command temporary if not already connected
-  call ch_sendraw(s:channel, "clear " . fileName . ":" . a:lineNumber . "\n")
+
+  if s:job != '' && job_status(s:job) == 'run'
+    let fileName = s:getClassNameFromFile(a:fileName)
+    call ch_sendraw(s:channel, "clear " . fileName . ":" . a:lineNumber . "\n")
+  else
+    let l:lineNumber = line('.')
+    let l:currentBuffer = bufnr('%')
+    exe 'sign unplace '. s:hash(expand("%:t"), str2nr(l:lineNumber))
+  endif
 endfunction
 
 function! s:continue()
@@ -254,5 +270,25 @@ function! s:toggleWatchWindow()
   else
     call s:openWindow('_JDB_WATCH_', 'vertical', 15)
   endif
+endfunction
+
+function! s:applyBreakPoints(channel, name)
+  let l:breakpoints = split(execute('sign place'), '\n')
+  let l:fileName = ''
+  for line in l:breakpoints
+    " get file file name for next signs
+    if -1 < stridx(line, '.java:')
+      let l:lineparts = split(line, ' ')
+      let l:fileName = l:lineparts[-1]
+      let l:fileName = substitute(l:fileName ,':$', '', 'g')
+    else
+      " get line number and overwrite not conencted breakpoint sign wih connected breakpoint sign
+      let l:lineparts = split(line, ' ')
+      if 5 == len(l:lineparts) && -1 < stridx(l:lineparts[4], '=breakpointnotconnected')
+        let l:lineNumber = split(l:lineparts[0], '=')[1]
+        call s:breakpointOnLine(l:fileName, l:lineNumber)
+      endif
+    endif
+  endfor
 endfunction
 
