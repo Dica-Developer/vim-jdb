@@ -174,6 +174,10 @@ endfunction
 
 function! s:attach(...)
   if s:job == '' || job_status(s:job) != 'run'
+    " store window and it's state to be able to restore after init
+    let l:orgwinid = win_getid()
+    let l:winview = winsaveview()
+
     let l:hostAndPort = get(a:, 1, 'localhost:5005')
     let l:jdbCommand = get(g:, 'vimjdb_jdb_command', 'jdb')
     call s:openWindow('_JDB_SHELL_', '', 15)
@@ -181,6 +185,10 @@ function! s:attach(...)
     let s:channel = job_getchannel(s:job)
     call ch_sendraw(s:channel, "run\n")
     call ch_sendraw(s:channel, "monitor where\n")
+
+    " jump now back to original window and let it look like we never left
+    call win_gotoid(l:orgwinid)
+    call winrestview(l:winview)
   else
     echom 'There is already a JDB session running. Detach first before you start a new one.'
   endif
