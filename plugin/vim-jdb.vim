@@ -51,6 +51,8 @@ sign define currentline text=-> texthl=Search
 
 let s:job = ''
 let s:channel = ''
+let s:max_signed_int = 2147483648
+lockvar s:max_signed_int
 
 function! s:hash(name, linenumber)
   let l:result = 1
@@ -58,7 +60,7 @@ function! s:hash(name, linenumber)
     let l:result = (l:result * 2) + char2nr(c)
   endfor
   let l:result = (l:result * 2) + a:linenumber
-  return l:result
+  return l:result % s:max_signed_int
 endfunction
 
 function! s:getClassNameFromFile(filename)
