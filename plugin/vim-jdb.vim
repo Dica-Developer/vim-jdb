@@ -82,7 +82,7 @@ function! JdbOutHandler(channel, msg)
     echom "breakpoint hit"
     let l:breakpoint = split(a:msg, ',')
     let l:filename = l:breakpoint[1]
-    let l:filename = substitute(l:filename, '\.\a*()$', '', '')
+    let l:filename = substitute(l:filename, '\.<\?\a*>\?()$', '', '')
     let l:filename = substitute(l:filename, ' ', '', 'g')
     let l:filename = join(split(l:filename, '\.'), '/')
     let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
@@ -94,11 +94,10 @@ function! JdbOutHandler(channel, msg)
     exe 'sign place 2 line='. l:linenumber .' name=currentline file='.  expand("%:p")
   endif
   if -1 < stridx(a:msg, 'Step completed:')
-    " TODO handle ClassName$3.get()
     echom "Step completed"
     let l:breakpoint = split(a:msg, ',')
     let l:filename = l:breakpoint[1]
-    let l:filename = substitute(l:filename, '\.\a*()$', '', '')
+    let l:filename = substitute(l:filename, '\.<\?\a*>\?()$', '', '')
     let l:filename = substitute(l:filename, ' ', '', 'g')
     let l:filename = join(split(l:filename, '\.'), '/')
     let l:linenumber = substitute(l:breakpoint[2], ',\|\.\| \|bci=\d*\|line=', '', 'g')
