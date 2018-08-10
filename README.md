@@ -1,3 +1,5 @@
+# Attention the project is moved to https://gitlab.com/Dica-Developer/vim-jdb
+
 # vim-jdb
 
 Its a JAVA debugger frontend plugin for VIM. It allows to debug a JAVA program via the JDB debugger. It allows remote debugging via attach parameter.
